@@ -52,6 +52,63 @@ export async function searchTmdb(
   return data?.results?.slice(0, 10) ?? [];
 }
 
+/**
+ * Find the best TMDB match for a title.
+ *
+ * Problem with naive results[0]: year-filtered searches return wrong matches
+ * when the stored year is when the user watched (e.g. Season 2 in 2024)
+ * rather than the show's first air date (2021). "Arcane Afterglow" (2024)
+ * would beat "Arcane" (2021) in a year=2024 search.
+ *
+ * Strategy:
+ * 1. Search with year → collect results
+ * 2. Search without year → collect results
+ * 3. Deduplicate by id, score each by title similarity
+ * 4. Exact title match wins; otherwise fall back to vote_count as tiebreaker
+ */
+export async function findBestTmdbMatch(
+  query: string,
+  type: 'movie' | 'tv',
+  year?: number
+): Promise<TmdbSearchResult | null> {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const nq = normalize(query);
+
+  function titleSimilarity(result: TmdbSearchResult): number {
+    const raw = result.title ?? result.name ?? '';
+    const nr = normalize(raw);
+    if (nr === nq) return 3;           // exact match
+    if (nr === nq + 'the' || 'the' + nr === nq) return 2; // "the" article variant
+    if (nr.startsWith(nq + ':') || nr.startsWith(nq + ' ')) return 1; // subtitle ("Arcane: …")
+    if (nr === nq.replace(/\s*\d+$/, '')) return 1; // strip trailing number
+    return 0;
+  }
+
+  // Fetch with and without year in parallel (year-only is faster but less reliable)
+  const [withYear, withoutYear] = await Promise.all([
+    year ? searchTmdb(query, type, year) : Promise.resolve([] as TmdbSearchResult[]),
+    searchTmdb(query, type),
+  ]);
+
+  // Merge, deduplicate by id
+  const seen = new Set<number>();
+  const all: TmdbSearchResult[] = [];
+  for (const r of [...withYear, ...withoutYear]) {
+    if (!seen.has(r.id)) { seen.add(r.id); all.push(r); }
+  }
+
+  if (all.length === 0) return null;
+
+  // Score: title similarity first, then vote_count as tiebreaker
+  all.sort((a, b) => {
+    const sd = titleSimilarity(b) - titleSimilarity(a);
+    if (sd !== 0) return sd;
+    return (b.vote_average ?? 0) - (a.vote_average ?? 0);
+  });
+
+  return all[0];
+}
+
 export interface TmdbDetails {
   id: number;
   title?: string;

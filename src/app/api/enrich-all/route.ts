@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/db/client';
-import { searchTmdb, getTmdbDetails, getTmdbExternalIds } from '@/lib/tmdb';
+import { findBestTmdbMatch, getTmdbDetails, getTmdbExternalIds } from '@/lib/tmdb';
 import { fetchByImdbId, fetchByTitle } from '@/lib/omdb';
 
 export const runtime = 'nodejs';
@@ -44,9 +44,7 @@ export async function POST() {
       for (const item of items) {
         try {
           const tmdbType = item.media_type === 'movie' ? 'movie' : 'tv';
-          let results = await searchTmdb(item.title, tmdbType, item.release_year);
-          if (results.length === 0) results = await searchTmdb(item.title, tmdbType);
-          const best = results[0];
+          const best = await findBestTmdbMatch(item.title, tmdbType, item.release_year);
 
           if (!best) {
             failed++;

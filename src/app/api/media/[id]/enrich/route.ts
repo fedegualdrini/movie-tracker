@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/db/client';
-import { searchTmdb, getTmdbDetails, getTmdbExternalIds } from '@/lib/tmdb';
+import { findBestTmdbMatch, getTmdbDetails, getTmdbExternalIds } from '@/lib/tmdb';
 import { fetchByImdbId, fetchByTitle } from '@/lib/omdb';
 
 export const runtime = 'nodejs';
@@ -21,11 +21,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   const tmdbType = item.media_type === 'movie' ? 'movie' : 'tv';
 
-  // TMDB search — try with year first (precise), fall back without year (handles
-  // series where release_year is a later season but TMDB uses the original air date)
-  let results = await searchTmdb(item.title, tmdbType, item.release_year);
-  if (results.length === 0) results = await searchTmdb(item.title, tmdbType);
-  const best = results[0];
+  const best = await findBestTmdbMatch(item.title, tmdbType, item.release_year);
   if (!best) {
     return NextResponse.json({ error: 'No TMDB match found' }, { status: 404 });
   }
