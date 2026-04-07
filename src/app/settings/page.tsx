@@ -1,6 +1,7 @@
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { SettingsClient } from './SettingsClient';
 import { EnrichAllButton } from '@/components/detail/EnrichAllButton';
+import { ScoreSummaryTable } from '@/components/shared/ScoreSummaryTable';
 import db from '@/db/client';
 
 export const dynamic = 'force-dynamic';
@@ -12,9 +13,50 @@ interface CountRow {
   watched: number;
 }
 
+interface ScoreRow {
+  media_type: string;
+  sheet_year: number | null;
+  avg_score: number | null;
+  rated: number;
+  total: number;
+}
+
 export default function SettingsPage() {
-  const tmdbKey = Boolean(process.env.TMDB_API_KEY);
-  const omdbKey = Boolean(process.env.OMDB_API_KEY);
+  const tmdbKey = Boolean(process.env['TMDB_API_KEY']);
+  const omdbKey = Boolean(process.env['OMDB_API_KEY']);
+
+  // Score summary: per type per year, plus overall
+  const scoreRows = db.prepare(`
+    SELECT media_type, sheet_year,
+      AVG(personal_score) as avg_score,
+      SUM(CASE WHEN personal_score IS NOT NULL THEN 1 ELSE 0 END) as rated,
+      COUNT(*) as total
+    FROM media
+    GROUP BY media_type, sheet_year
+    ORDER BY media_type, sheet_year DESC
+  `).all() as ScoreRow[];
+
+  const overallRows = db.prepare(`
+    SELECT media_type, NULL as sheet_year,
+      AVG(personal_score) as avg_score,
+      SUM(CASE WHEN personal_score IS NOT NULL THEN 1 ELSE 0 END) as rated,
+      COUNT(*) as total
+    FROM media
+    GROUP BY media_type
+  `).all() as ScoreRow[];
+
+  // Build nested data: { movie: { overall: ..., '2024': ..., '2025': ... }, ... }
+  type SummaryCell = { avg: number | null; rated: number; total: number };
+  const summaryData: Record<string, Record<string, SummaryCell>> = {};
+  for (const r of overallRows) {
+    summaryData[r.media_type] = { overall: { avg: r.avg_score, rated: r.rated, total: r.total } };
+  }
+  for (const r of scoreRows) {
+    if (!summaryData[r.media_type]) summaryData[r.media_type] = {};
+    summaryData[r.media_type][String(r.sheet_year)] = { avg: r.avg_score, rated: r.rated, total: r.total };
+  }
+
+  const summaryYears = [...new Set(scoreRows.map(r => r.sheet_year!).filter(Boolean))].sort((a, b) => b - a);
 
   const counts = db.prepare(`
     SELECT media_type, sheet_year, COUNT(*) as count, SUM(watched) as watched
@@ -27,6 +69,12 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 space-y-8">
       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Settings</h1>
+
+      {/* Score Summary */}
+      <section className="rounded-xl border border-slate-200 p-5 space-y-3 dark:border-slate-800">
+        <h2 className="font-semibold text-slate-800 dark:text-slate-100">Score Summary</h2>
+        <ScoreSummaryTable data={summaryData} years={summaryYears} />
+      </section>
 
       {/* Stats */}
       <section className="rounded-xl border border-slate-200 p-5 space-y-3 dark:border-slate-800">
