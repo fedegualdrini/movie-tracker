@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchTmdb } from '@/lib/tmdb';
+import { searchTmdb, debugInternals } from '@/lib/tmdb';
 
 export const runtime = 'nodejs';
 
@@ -38,6 +38,9 @@ export async function GET() {
     tmdbErrorNoYear = String(err);
   }
 
+  // 4. debugInternals() — step-by-step trace inside lib/tmdb.ts itself
+  const internals = await debugInternals();
+
   return NextResponse.json({
     env: {
       TMDB_API_KEY_set: Boolean(key),
@@ -48,5 +51,6 @@ export async function GET() {
     raw_fetch: { status: rawStatus, result_count: rawResultCount, error: rawError },
     searchTmdb_with_year: { result_count: Array.isArray(tmdbResults) ? tmdbResults.length : null, first_title: Array.isArray(tmdbResults) && tmdbResults.length > 0 ? (tmdbResults[0] as { title?: string }).title : null, error: tmdbError },
     searchTmdb_no_year: { result_count: Array.isArray(tmdbResultsNoYear) ? tmdbResultsNoYear.length : null, first_title: Array.isArray(tmdbResultsNoYear) && tmdbResultsNoYear.length > 0 ? (tmdbResultsNoYear[0] as { title?: string }).title : null, error: tmdbErrorNoYear },
+    lib_internals: internals,
   });
 }

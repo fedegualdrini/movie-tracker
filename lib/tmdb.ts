@@ -92,3 +92,38 @@ export function getPosterUrl(posterPath: string | null | undefined, size = 'w500
 export function hasApiKey(): boolean {
   return Boolean(apiKey());
 }
+
+/** Deep diagnostic — call from /api/debug only, not for production use */
+export async function debugInternals(): Promise<object> {
+  const key = process.env['TMDB_API_KEY'] ?? null;
+  const keyViaFn = apiKey();
+
+  if (!key && !keyViaFn) {
+    return { step: 'no_key', process_env_direct: key, apiKey_fn: keyViaFn };
+  }
+
+  const useKey = key ?? keyViaFn ?? '';
+  const url = new URL(`${BASE}/search/movie`);
+  url.searchParams.set('api_key', useKey);
+  url.searchParams.set('query', 'The Creator');
+  const urlSafe = url.toString().replace(useKey, useKey.slice(0, 6) + '***');
+
+  try {
+    const res = await fetch(url.toString(), { cache: 'no-store' });
+    let body: unknown = null;
+    try { body = await res.json(); } catch { body = '(non-json)'; }
+    const results = (body as { results?: unknown[] })?.results;
+    return {
+      step: 'fetch_done',
+      key_direct: key?.slice(0, 8),
+      key_via_fn: keyViaFn?.slice(0, 8),
+      url: urlSafe,
+      status: res.status,
+      ok: res.ok,
+      result_count: results?.length ?? null,
+      body_preview: JSON.stringify(body)?.slice(0, 200),
+    };
+  } catch (err) {
+    return { step: 'fetch_error', url: urlSafe, error: String(err) };
+  }
+}
