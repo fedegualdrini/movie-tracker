@@ -6,12 +6,18 @@ function apiKey(): string | null {
 
 async function get<T>(endpoint: string, params: Record<string, string> = {}): Promise<T | null> {
   const key = apiKey();
-  if (!key) return null;
+  if (!key) {
+    console.warn('[TMDB] TMDB_API_KEY is not set — skipping request to', endpoint);
+    return null;
+  }
   const url = new URL(`${BASE}${endpoint}`);
   url.searchParams.set('api_key', key);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const res = await fetch(url.toString());
-  if (!res.ok) return null;
+  if (!res.ok) {
+    console.warn(`[TMDB] Request failed: ${res.status} ${res.statusText} — ${endpoint}`);
+    return null;
+  }
   return res.json() as Promise<T>;
 }
 
