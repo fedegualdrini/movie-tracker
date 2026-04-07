@@ -3,24 +3,44 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface Props {
-  entryId: number;
-  currentScore: number | null;
+interface NewEntry {
+  title: string;
+  media_type: string;
+  sheet_year: number;
+  release_year: number;
+  season_number: number;
 }
 
-export function SeasonScoreInput({ entryId, currentScore }: Props) {
+interface Props {
+  entryId?: number;
+  currentScore?: number | null;
+  newEntry?: NewEntry;
+}
+
+export function SeasonScoreInput({ entryId, currentScore, newEntry }: Props) {
   const [score, setScore] = useState(currentScore?.toString() ?? '');
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
   async function save() {
-    setSaving(true);
     const val = score.trim() === '' ? null : parseFloat(score);
-    await fetch(`/api/media/${entryId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personal_score: val }),
-    });
+    if (val === null) return;
+    setSaving(true);
+
+    if (entryId != null) {
+      await fetch(`/api/media/${entryId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personal_score: val }),
+      });
+    } else if (newEntry) {
+      await fetch('/api/media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newEntry, personal_score: val }),
+      });
+    }
+
     setSaving(false);
     router.refresh();
   }

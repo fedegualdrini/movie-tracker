@@ -58,10 +58,12 @@ export async function POST(req: NextRequest) {
     release_year: number;
     media_type: 'movie' | 'series' | 'anime';
     sheet_year: number;
+    season_number?: number;
     personal_score?: number | null;
   };
 
   const { title, release_year, media_type, sheet_year, personal_score } = body;
+  const season_number = body.season_number ?? 1;
   if (!title || !release_year || !media_type || !sheet_year) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
@@ -70,9 +72,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const info = db.prepare(`
-      INSERT INTO media (title, release_year, media_type, sheet_year, personal_score, watched)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(title, release_year, media_type, sheet_year, personal_score ?? null, watched);
+      INSERT INTO media (title, release_year, media_type, sheet_year, season_number, personal_score, watched)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(title, release_year, media_type, sheet_year, season_number, personal_score ?? null, watched);
 
     const row = db.prepare('SELECT * FROM media WHERE id = ?').get(info.lastInsertRowid);
     return NextResponse.json(row, { status: 201 });

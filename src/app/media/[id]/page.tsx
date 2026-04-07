@@ -207,11 +207,19 @@ export default async function MediaDetailPage({
                     <span className="ml-1 text-[10px] font-normal text-slate-400">TMDB</span>
                   </p>
 
-                  {/* User's personal score — editable if tracked */}
+                  {/* User's personal score — editable if tracked, creatable if not */}
                   {userEntry ? (
                     <SeasonScoreInput entryId={userEntry.id} currentScore={userEntry.personal_score} />
                   ) : (
-                    <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-1.5">not tracked</p>
+                    <SeasonScoreInput
+                      newEntry={{
+                        title: item.title,
+                        media_type: item.media_type,
+                        sheet_year: item.sheet_year,
+                        release_year: s.air_date ? parseInt(s.air_date.slice(0, 4)) : item.release_year,
+                        season_number: s.season_number,
+                      }}
+                    />
                   )}
 
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
