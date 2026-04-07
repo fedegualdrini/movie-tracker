@@ -27,6 +27,15 @@ function queryMedia(sp: SearchParams) {
   else if (sp.watched === 'false') { conditions.push('watched = 0'); }
   if (sp.search) { conditions.push('title LIKE ?'); params.push(`%${sp.search}%`); }
 
+  // For series/anime: show only one card per show (the first-ever entry by id).
+  conditions.push(`(
+    media_type = 'movie'
+    OR id = (
+      SELECT MIN(m2.id) FROM media m2
+      WHERE m2.title = media.title AND m2.media_type = media.media_type
+    )
+  )`);
+
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const sortMap: Record<string, string> = {
     title: 'title ASC',
