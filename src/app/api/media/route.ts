@@ -35,12 +35,12 @@ export async function GET(req: NextRequest) {
     params.push(`%${search}%`);
   }
 
-  // For series/anime: show only the primary entry (lowest season_number) per show.
-  // Seasons scored from the detail page are still accessible via the detail page.
+  // For series/anime: show only one card per show (the first-ever entry by id).
+  // All other seasons/entries are accessible via the detail page.
   conditions.push(`(
     media_type = 'movie'
-    OR season_number = (
-      SELECT MIN(m2.season_number) FROM media m2
+    OR id = (
+      SELECT MIN(m2.id) FROM media m2
       WHERE m2.title = media.title AND m2.media_type = media.media_type
     )
   )`);
