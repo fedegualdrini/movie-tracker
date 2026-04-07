@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Sparkles, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ProgressEvent {
@@ -19,6 +19,7 @@ interface ProgressEvent {
 
 export function EnrichAllButton() {
   const [running, setRunning] = useState(false);
+  const [force, setForce] = useState(false);
   const [progress, setProgress] = useState<ProgressEvent | null>(null);
   const [log, setLog] = useState<ProgressEvent[]>([]);
   const abortRef = useRef<AbortController | null>(null);
@@ -32,7 +33,12 @@ export function EnrichAllButton() {
     abortRef.current = abort;
 
     try {
-      const res = await fetch('/api/enrich-all', { method: 'POST', signal: abort.signal });
+      const res = await fetch('/api/enrich-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force }),
+        signal: abort.signal,
+      });
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let buf = '';
@@ -67,23 +73,31 @@ export function EnrichAllButton() {
   }
 
   const pct = progress?.total ? Math.round(((progress.done ?? 0) / progress.total) * 100) : 0;
+  const enrichedCount = log.filter(e => e.type === 'enriched').length;
+  const skippedCount = log.filter(e => e.type === 'skip' || e.type === 'error').length;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {!running ? (
-          <Button onClick={startEnrichAll} variant="default" className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            Enrich All Missing
-          </Button>
+          <>
+            <Button onClick={startEnrichAll} variant="default" className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              Enrich All Missing
+            </Button>
+            <Button onClick={() => { setForce(true); setTimeout(startEnrichAll, 0); }} variant="outline" className="gap-2" title="Re-fetch metadata for all entries, including already-enriched ones">
+              <RefreshCw className="h-4 w-4" />
+              Re-enrich All
+            </Button>
+          </>
         ) : (
           <Button onClick={stop} variant="destructive" size="sm">
             Stop
           </Button>
         )}
         {progress?.type === 'complete' && (
-          <p className="text-sm text-green-600 font-medium">
-            Done — {progress.done} enriched, {progress.failed} skipped
+          <p className="text-sm text-green-600 font-medium dark:text-green-400">
+            Done — {enrichedCount} updated, {skippedCount} no match
           </p>
         )}
       </div>
@@ -94,9 +108,9 @@ export function EnrichAllButton() {
             <span>{progress.title ?? '…'}</span>
             <span>{progress.done ?? 0} / {progress.total}</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
             <div
-              className="h-full rounded-full bg-slate-800 transition-all duration-300"
+              className="h-full rounded-full bg-slate-800 dark:bg-slate-200 transition-all duration-300"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -107,7 +121,7 @@ export function EnrichAllButton() {
       )}
 
       {log.length > 0 && (
-        <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-2 space-y-0.5">
+        <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-2 space-y-0.5 dark:border-slate-800 dark:bg-slate-900">
           {log.map((evt, i) => (
             <div key={i} className="flex items-center gap-2 text-xs">
               {evt.type === 'enriched' ? (
@@ -115,7 +129,7 @@ export function EnrichAllButton() {
               ) : (
                 <XCircle className="h-3 w-3 flex-shrink-0 text-amber-400" />
               )}
-              <span className={`truncate ${evt.type === 'enriched' ? 'text-slate-700' : 'text-slate-400'}`}>
+              <span className={`truncate ${evt.type === 'enriched' ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400'}`}>
                 {evt.title}
                 {evt.type === 'enriched' && evt.tmdbScore && (
                   <span className="ml-1 text-slate-400">TMDB {evt.tmdbScore.toFixed(1)}{evt.rtScore ? ` · RT ${evt.rtScore}` : ''}</span>

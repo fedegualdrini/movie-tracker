@@ -10,6 +10,7 @@ import { RatingComparison } from '@/components/detail/RatingComparison';
 import { EnrichButton } from '@/components/detail/EnrichButton';
 import { EditEntryForm } from '@/components/detail/EditEntryForm';
 import { Badge } from '@/components/ui/badge';
+import { SeasonScoreInput } from '@/components/detail/SeasonScoreInput';
 
 interface TmdbSeason {
   season_number: number;
@@ -206,18 +207,11 @@ export default async function MediaDetailPage({
                     <span className="ml-1 text-[10px] font-normal text-slate-400">TMDB</span>
                   </p>
 
-                  {/* User's personal score for this season (if they rated it) */}
-                  {userEntry?.personal_score != null && (
-                    <p className={`text-sm font-semibold tabular-nums ${scoreColor(userEntry.personal_score)}`}>
-                      {userEntry.personal_score.toFixed(1)}
-                      <span className="ml-1 text-[10px] font-normal text-slate-400">you</span>
-                    </p>
-                  )}
-                  {userEntry && userEntry.personal_score == null && (
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">No Visto</p>
-                  )}
-                  {!userEntry && (
-                    <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-0.5">not tracked</p>
+                  {/* User's personal score — editable if tracked */}
+                  {userEntry ? (
+                    <SeasonScoreInput entryId={userEntry.id} currentScore={userEntry.personal_score} />
+                  ) : (
+                    <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-1.5">not tracked</p>
                   )}
 
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">

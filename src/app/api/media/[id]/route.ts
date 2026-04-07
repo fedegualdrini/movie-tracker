@@ -21,6 +21,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     watched: number;
     sheet_year: number;
     media_type: string;
+    season_number: number;
   }>;
 
   const existing = db.prepare('SELECT * FROM media WHERE id = ?').get(parseInt(id));
@@ -43,6 +44,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
   if (body.sheet_year !== undefined) { fields.push('sheet_year = ?'); values.push(body.sheet_year); }
   if (body.media_type !== undefined) { fields.push('media_type = ?'); values.push(body.media_type); }
+  if (body.season_number !== undefined) { fields.push('season_number = ?'); values.push(body.season_number); }
 
   if (fields.length === 0) return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
 

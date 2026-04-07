@@ -20,10 +20,12 @@ function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-export async function POST() {
-  const items = db.prepare(
-    "SELECT id, title, release_year, media_type FROM media WHERE enriched_at IS NULL ORDER BY sheet_year DESC, id"
-  ).all() as MediaRow[];
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => ({})) as { force?: boolean };
+  const query = body.force
+    ? "SELECT id, title, release_year, media_type FROM media ORDER BY sheet_year DESC, id"
+    : "SELECT id, title, release_year, media_type FROM media WHERE enriched_at IS NULL ORDER BY sheet_year DESC, id";
+  const items = db.prepare(query).all() as MediaRow[];
 
   const total = items.length;
 
