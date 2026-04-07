@@ -10,7 +10,7 @@ import { RatingComparison } from '@/components/detail/RatingComparison';
 import { EnrichButton } from '@/components/detail/EnrichButton';
 import { EditEntryForm } from '@/components/detail/EditEntryForm';
 import { Badge } from '@/components/ui/badge';
-import { SeasonScoreInput } from '@/components/detail/SeasonScoreInput';
+import { SeasonSelector } from '@/components/detail/SeasonSelector';
 
 interface TmdbSeason {
   season_number: number;
@@ -173,64 +173,17 @@ export default async function MediaDetailPage({
       {tmdbSeasons.length > 0 && (
         <div className="mt-8">
           <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">All Seasons</h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {tmdbSeasons.map((s) => {
-              const isThis = s.season_number === seasonNumber;
-              const userEntry = relatedSeasons.find(r => r.season_number === s.season_number);
-              const score = s.vote_average;
-              const borderColor =
-                score >= 8 ? 'border-emerald-400 dark:border-emerald-700'
-                : score >= 7 ? 'border-green-300 dark:border-green-700'
-                : score >= 5 ? 'border-amber-300 dark:border-amber-700'
-                : 'border-red-300 dark:border-red-700';
-              const bgColor = isThis
-                ? 'bg-indigo-50 dark:bg-indigo-950/40 ring-2 ring-indigo-400 dark:ring-indigo-600'
-                : 'bg-slate-50 dark:bg-slate-800/50';
-              const tmdbTextColor =
-                score >= 8 ? 'text-emerald-700 dark:text-emerald-400'
-                : score >= 7 ? 'text-green-700 dark:text-green-400'
-                : score >= 5 ? 'text-amber-700 dark:text-amber-400'
-                : 'text-red-700 dark:text-red-400';
-
-              return (
-                <div key={s.season_number} className={`rounded-lg border p-3 ${borderColor} ${bgColor}`}>
-                  <div className="flex items-start justify-between gap-1">
-                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate leading-tight">
-                      {s.name}
-                      {isThis && <span className="ml-1 text-indigo-500 dark:text-indigo-400">←</span>}
-                    </p>
-                  </div>
-
-                  {/* TMDB score */}
-                  <p className={`mt-1.5 text-lg font-bold tabular-nums ${tmdbTextColor}`}>
-                    {score.toFixed(1)}
-                    <span className="ml-1 text-[10px] font-normal text-slate-400">TMDB</span>
-                  </p>
-
-                  {/* User's personal score — editable if tracked, creatable if not */}
-                  {userEntry ? (
-                    <SeasonScoreInput entryId={userEntry.id} currentScore={userEntry.personal_score} />
-                  ) : (
-                    <SeasonScoreInput
-                      newEntry={{
-                        title: item.title,
-                        media_type: item.media_type,
-                        sheet_year: item.sheet_year,
-                        release_year: s.air_date ? parseInt(s.air_date.slice(0, 4)) : item.release_year,
-                        season_number: s.season_number,
-                      }}
-                    />
-                  )}
-
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-                    {s.episode_count} eps{s.air_date ? ` · ${s.air_date.slice(0, 4)}` : ''}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* User seasons not in TMDB data (edge case) */}
+          <SeasonSelector
+            tmdbSeasons={tmdbSeasons}
+            relatedSeasons={relatedSeasons}
+            currentSeasonNumber={seasonNumber}
+            parentEntry={{
+              title: item.title,
+              media_type: item.media_type,
+              sheet_year: item.sheet_year,
+              release_year: item.release_year,
+            }}
+          />
           {relatedSeasons.filter(r => !tmdbSeasons.find(s => s.season_number === r.season_number)).length > 0 && (
             <p className="mt-2 text-xs text-slate-400">
               Some rated seasons not yet matched to TMDB — re-enrich to update.
