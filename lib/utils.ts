@@ -19,6 +19,14 @@ export function scoreBg(score: number | null | undefined): string {
   return 'bg-red-500/15 text-red-600';
 }
 
+/** Solid, always-readable badge for use on top of poster images */
+export function scoreOverlayBg(score: number | null | undefined): string {
+  if (score == null) return 'bg-slate-800';
+  if (score >= 7) return 'bg-green-600';
+  if (score >= 5) return 'bg-amber-500';
+  return 'bg-red-600';
+}
+
 export function rtToDecimal(rt: string | null | undefined): number | null {
   if (!rt) return null;
   const num = parseFloat(rt.replace('%', ''));

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { getTmdbPosterUrl, scoreBg } from '@/lib/utils';
+import { getTmdbPosterUrl, scoreOverlayBg } from '@/lib/utils';
 
 interface MediaRow {
   id: number;
@@ -51,11 +51,11 @@ export function MediaCard({ item }: { item: MediaRow }) {
         {/* Personal score badge */}
         <div className="absolute top-2 right-2">
           {item.personal_score != null ? (
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold ${scoreBg(item.personal_score)}`}>
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold text-white shadow ${scoreOverlayBg(item.personal_score)}`}>
               {item.personal_score.toFixed(1)}
             </span>
           ) : item.watched === 0 ? (
-            <span className="inline-flex items-center rounded-full bg-slate-900/70 px-2 py-0.5 text-xs text-white">
+            <span className="inline-flex items-center rounded-full bg-slate-900/80 px-2 py-0.5 text-xs text-white shadow backdrop-blur-sm">
               No Visto
             </span>
           ) : null}
