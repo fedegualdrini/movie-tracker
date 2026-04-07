@@ -3,6 +3,8 @@ import { SettingsClient } from './SettingsClient';
 import { EnrichAllButton } from '@/components/detail/EnrichAllButton';
 import db from '@/db/client';
 
+export const dynamic = 'force-dynamic';
+
 interface CountRow {
   media_type: string;
   sheet_year: number;

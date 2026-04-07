@@ -3,6 +3,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import db from '@/db/client';
+
+export const dynamic = 'force-dynamic';
 import { getTmdbPosterUrl } from '@/lib/utils';
 import { RatingComparison } from '@/components/detail/RatingComparison';
 import { EnrichButton } from '@/components/detail/EnrichButton';

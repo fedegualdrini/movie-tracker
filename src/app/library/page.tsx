@@ -4,6 +4,8 @@ import { MediaGrid } from '@/components/library/MediaGrid';
 import { MediaTable } from '@/components/library/MediaTable';
 import db from '@/db/client';
 
+export const dynamic = 'force-dynamic';
+
 interface SearchParams {
   type?: string;
   year?: string;
