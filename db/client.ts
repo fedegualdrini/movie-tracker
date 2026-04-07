@@ -39,16 +39,29 @@ declare global {
   var __db: Database.Database | undefined;
 }
 
+// During `next build`, 17 parallel workers all import this module simultaneously.
+// Connecting to SQLite in all of them causes SQLITE_BUSY. Skip connection at
+// build time — API route handlers are never actually called during the build,
+// only imported for module-graph analysis.
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
 function createDb(): Database.Database {
   const dir = path.dirname(DB_PATH);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const db = new Database(DB_PATH);
+  // busy_timeout: wait up to 10s on lock contention instead of throwing immediately.
+  // Covers any remaining parallel access during hot-reload or concurrent requests.
+  db.pragma('busy_timeout = 10000');
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
   return db;
 }
 
-const db: Database.Database = globalThis.__db ?? createDb();
-if (process.env.NODE_ENV !== 'production') globalThis.__db = db;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db: Database.Database = isBuildPhase
+  ? (null as unknown as Database.Database)
+  : (globalThis.__db ?? createDb());
+
+if (!isBuildPhase && process.env.NODE_ENV !== 'production') globalThis.__db = db;
 
 export default db;
