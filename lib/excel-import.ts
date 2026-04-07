@@ -87,19 +87,17 @@ function parseSection(
   return results;
 }
 
-export function importExcel(
-  filePath: string,
+function processWorkbook(
+  wb: XLSX.WorkBook,
   insertFn: (entry: ParsedEntry) => boolean
 ): ImportResult {
-  const absPath = path.resolve(filePath);
-  const wb = XLSX.readFile(absPath);
   let inserted = 0;
   let skipped = 0;
   const errors: string[] = [];
 
   for (const sheetName of wb.SheetNames) {
     const cfg = SHEET_CONFIG[sheetName];
-    if (!cfg) continue; // skip Template and unknown sheets
+    if (!cfg) continue;
 
     const ws = wb.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
@@ -126,4 +124,23 @@ export function importExcel(
   }
 
   return { inserted, skipped, errors };
+}
+
+// Import from a file path (local use)
+export function importExcel(
+  filePath: string,
+  insertFn: (entry: ParsedEntry) => boolean
+): ImportResult {
+  const absPath = path.resolve(filePath);
+  const wb = XLSX.readFile(absPath);
+  return processWorkbook(wb, insertFn);
+}
+
+// Import from a Buffer (file upload via browser)
+export function importExcelFromBuffer(
+  buffer: Buffer,
+  insertFn: (entry: ParsedEntry) => boolean
+): ImportResult {
+  const wb = XLSX.read(buffer, { type: 'buffer' });
+  return processWorkbook(wb, insertFn);
 }
