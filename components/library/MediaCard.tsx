@@ -12,6 +12,7 @@ interface MediaRow {
   watched: number;
   tmdb_poster_path: string | null;
   tmdb_score: number | null;
+  scored_seasons?: string | null;
 }
 
 function Initials({ title }: { title: string }) {
@@ -62,16 +63,26 @@ export function MediaCard({ item }: { item: MediaRow }) {
           ) : null}
         </div>
 
-        {/* Type badge + season */}
+        {/* Type badge + season tags */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           <span className="inline-flex items-center rounded-full bg-slate-900/60 px-1.5 py-0.5 text-[10px] text-white capitalize">
             {item.media_type}
           </span>
-          {(item.media_type === 'series' || item.media_type === 'anime') && (item.season_number ?? 1) > 1 && (
-            <span className="inline-flex items-center rounded-full bg-indigo-600/80 px-1.5 py-0.5 text-[10px] font-bold text-white">
-              S{item.season_number}
-            </span>
-          )}
+          {(item.media_type === 'series' || item.media_type === 'anime') && (() => {
+            const seasons = item.scored_seasons
+              ? item.scored_seasons.split(',').map(Number).filter(Boolean)
+              : [];
+            if (seasons.length <= 1) return null;
+            return (
+              <div className="flex flex-wrap gap-0.5">
+                {seasons.map(s => (
+                  <span key={s} className="inline-flex items-center rounded-full bg-indigo-600/80 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    S{s}
+                  </span>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

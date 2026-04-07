@@ -10,6 +10,7 @@ interface MediaRow {
   watched: number;
   tmdb_poster_path: string | null;
   tmdb_score: number | null;
+  scored_seasons?: string | null;
 }
 
 export function MediaGrid({ items }: { items: MediaRow[] }) {
