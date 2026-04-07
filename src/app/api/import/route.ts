@@ -10,8 +10,8 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   const contentType = req.headers.get('content-type') ?? '';
   const stmt = db.prepare(`
-    INSERT OR IGNORE INTO media (title, release_year, media_type, sheet_year, personal_score, watched)
-    VALUES (@title, @release_year, @media_type, @sheet_year, @personal_score, @watched)
+    INSERT OR IGNORE INTO media (title, release_year, media_type, sheet_year, personal_score, watched, season_number)
+    VALUES (@title, @release_year, @media_type, @sheet_year, @personal_score, @watched, @season_number)
   `);
 
   const insert = (entry: Parameters<typeof stmt.run>[0]) => {

@@ -35,13 +35,14 @@ const SHEET_CONFIG: Record<string, SheetConfig> = {
   },
 };
 
-interface ParsedEntry {
+export interface ParsedEntry {
   title: string;
   release_year: number;
   media_type: 'movie' | 'series' | 'anime';
   sheet_year: number;
   personal_score: number | null;
   watched: 0 | 1;
+  season_number: number;
 }
 
 function parseSection(
@@ -51,6 +52,10 @@ function parseSection(
   sheetYear: number
 ): ParsedEntry[] {
   const results: ParsedEntry[] = [];
+  // Track how many times each title appears within this section.
+  // For series/anime, repeated titles = additional seasons.
+  const titleCount: Record<string, number> = {};
+
   // Skip row 0 (header)
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
@@ -82,7 +87,18 @@ function parseSection(
       }
     }
 
-    results.push({ title: titleStr, release_year: year, media_type: mediaType, sheet_year: sheetYear, personal_score, watched });
+    // Season detection: movies are always season 1.
+    // For series/anime, count how many times this title has appeared — each
+    // occurrence is a new season (e.g. "Arcane" twice → Season 1, Season 2).
+    const titleKey = titleStr.toLowerCase();
+    if (mediaType === 'movie') {
+      titleCount[titleKey] = 1;
+    } else {
+      titleCount[titleKey] = (titleCount[titleKey] ?? 0) + 1;
+    }
+    const season_number = titleCount[titleKey];
+
+    results.push({ title: titleStr, release_year: year, media_type: mediaType, sheet_year: sheetYear, personal_score, watched, season_number });
   }
   return results;
 }
@@ -117,7 +133,7 @@ function processWorkbook(
           if (wasInserted) inserted++;
           else skipped++;
         } catch (err) {
-          errors.push(`${entry.title} (${entry.media_type} ${sheetYear}): ${String(err)}`);
+          errors.push(`${entry.title} S${entry.season_number} (${entry.media_type} ${sheetYear}): ${String(err)}`);
         }
       }
     }

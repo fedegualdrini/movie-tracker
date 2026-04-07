@@ -5,6 +5,7 @@ interface MediaRow {
   title: string;
   release_year: number;
   media_type: string;
+  season_number: number;
   personal_score: number | null;
   watched: number;
   tmdb_poster_path: string | null;

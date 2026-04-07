@@ -57,6 +57,9 @@ function createDb(): Database.Database {
   if (!cols.includes('tmdb_seasons')) {
     db.exec('ALTER TABLE media ADD COLUMN tmdb_seasons TEXT');
   }
+  if (!cols.includes('season_number')) {
+    db.exec('ALTER TABLE media ADD COLUMN season_number INTEGER NOT NULL DEFAULT 1');
+  }
   return db;
 }
 
