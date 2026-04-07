@@ -196,7 +196,7 @@ export function SeasonSelector({ tmdbSeasons, relatedSeasons, currentSeasonNumbe
               className="w-24 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm tabular-nums dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
             {saving && <span className="text-xs text-slate-400">Saving…</span>}
-            {!saving && localScores[selectedNum]?.score != null && (
+            {!saving && selectedNum != null && localScores[selectedNum]?.score != null && (
               <span className="text-xs text-green-600 dark:text-green-400">Saved</span>
             )}
           </div>
