@@ -42,7 +42,7 @@ export default function SettingsPage() {
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wide dark:border-slate-800">
                 <th className="pb-1 text-left">Type</th>
-                <th className="pb-1 text-left">Year</th>
+                <th className="pb-1 text-left">Tracked In</th>
                 <th className="pb-1 text-right">Total</th>
                 <th className="pb-1 text-right">Watched</th>
               </tr>

@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 
 interface LibraryFiltersProps {
   view: 'grid' | 'table';
+  sheetYears: number[];
+  releaseYears: number[];
 }
 
 const TYPES = [
@@ -16,13 +18,6 @@ const TYPES = [
   { value: 'movie', label: 'Movies' },
   { value: 'series', label: 'Series' },
   { value: 'anime', label: 'Anime' },
-];
-
-const YEARS = [
-  { value: 'all', label: 'All Years' },
-  { value: '2026', label: '2026' },
-  { value: '2025', label: '2025' },
-  { value: '2024', label: '2024' },
 ];
 
 const WATCHED = [
@@ -39,13 +34,14 @@ const SORTS = [
   { value: 'recent', label: 'Recently Added' },
 ];
 
-export function LibraryFilters({ view }: LibraryFiltersProps) {
+export function LibraryFilters({ view, sheetYears, releaseYears }: LibraryFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const current = {
     type: searchParams.get('type') ?? 'all',
-    year: searchParams.get('year') ?? 'all',
+    trackedYear: searchParams.get('trackedYear') ?? 'all',
+    releaseYear: searchParams.get('releaseYear') ?? 'all',
     watched: searchParams.get('watched') ?? 'all',
     sort: searchParams.get('sort') ?? 'title',
     search: searchParams.get('search') ?? '',
@@ -54,7 +50,11 @@ export function LibraryFilters({ view }: LibraryFiltersProps) {
 
   const update = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set(key, value);
+    if (value === 'all' || value === '') {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
     params.delete('page');
     router.push(`/library?${params.toString()}`);
   }, [router, searchParams]);
@@ -62,6 +62,10 @@ export function LibraryFilters({ view }: LibraryFiltersProps) {
   const pillBase = 'rounded-full px-3 py-1 text-xs font-medium transition-colors';
   const pillActive = 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900';
   const pillInactive = 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700';
+  const selectClass = 'rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700';
+
+  const trackedYearOpts = [{ value: 'all', label: 'All' }, ...sheetYears.map(y => ({ value: String(y), label: String(y) }))];
+  const hasActiveFilters = current.type !== 'all' || current.trackedYear !== 'all' || current.releaseYear !== 'all' || current.watched !== 'all' || current.search;
 
   return (
     <div className="space-y-3">
@@ -98,28 +102,79 @@ export function LibraryFilters({ view }: LibraryFiltersProps) {
 
       {/* Filter pills */}
       <div className="flex flex-wrap gap-4">
-        {[
-          { label: 'Type', key: 'type', opts: TYPES },
-          { label: 'Year', key: 'year', opts: YEARS },
-          { label: 'Status', key: 'watched', opts: WATCHED },
-          { label: 'Sort', key: 'sort', opts: SORTS },
-        ].map(({ label, key, opts }) => (
-          <div key={key} className="flex items-center gap-1">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">{label}:</span>
-            {opts.map(({ value, label: optLabel }) => (
-              <button
-                key={value}
-                onClick={() => update(key, value)}
-                className={cn(pillBase, (current as Record<string, string>)[key] === value ? pillActive : pillInactive)}
-              >
-                {optLabel}
-              </button>
+        {/* Type */}
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">Type:</span>
+          {TYPES.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => update('type', value)}
+              className={cn(pillBase, current.type === value ? pillActive : pillInactive)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tracked In (sheet_year = which Excel tab) */}
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">Tracked In:</span>
+          {trackedYearOpts.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => update('trackedYear', value)}
+              className={cn(pillBase, current.trackedYear === value ? pillActive : pillInactive)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Release Year (actual movie release year — dropdown since many values) */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Release Year:</span>
+          <select
+            value={current.releaseYear}
+            onChange={(e) => update('releaseYear', e.target.value)}
+            className={selectClass}
+          >
+            <option value="all">All</option>
+            {releaseYears.map(y => (
+              <option key={y} value={String(y)}>{y}</option>
             ))}
-          </div>
-        ))}
+          </select>
+        </div>
+
+        {/* Status */}
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">Status:</span>
+          {WATCHED.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => update('watched', value)}
+              className={cn(pillBase, current.watched === value ? pillActive : pillInactive)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sort */}
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">Sort:</span>
+          {SORTS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => update('sort', value)}
+              className={cn(pillBase, current.sort === value ? pillActive : pillInactive)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {(current.type !== 'all' || current.year !== 'all' || current.watched !== 'all' || current.search) && (
+      {hasActiveFilters && (
         <Button variant="ghost" size="sm" onClick={() => router.push('/library')}>
           Clear filters
         </Button>

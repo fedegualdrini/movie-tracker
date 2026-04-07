@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
 
 interface SearchParams {
   type?: string;
-  year?: string;
+  trackedYear?: string;
+  releaseYear?: string;
   watched?: string;
   search?: string;
   sort?: string;
@@ -20,7 +21,8 @@ function queryMedia(sp: SearchParams) {
   const params: (string | number)[] = [];
 
   if (sp.type && sp.type !== 'all') { conditions.push('media_type = ?'); params.push(sp.type); }
-  if (sp.year && sp.year !== 'all') { conditions.push('sheet_year = ?'); params.push(parseInt(sp.year)); }
+  if (sp.trackedYear && sp.trackedYear !== 'all') { conditions.push('sheet_year = ?'); params.push(parseInt(sp.trackedYear)); }
+  if (sp.releaseYear && sp.releaseYear !== 'all') { conditions.push('release_year = ?'); params.push(parseInt(sp.releaseYear)); }
   if (sp.watched === 'true') { conditions.push('watched = 1'); }
   else if (sp.watched === 'false') { conditions.push('watched = 0'); }
   if (sp.search) { conditions.push('title LIKE ?'); params.push(`%${sp.search}%`); }
@@ -49,6 +51,9 @@ export default async function LibraryPage({
   const view = sp.view ?? 'grid';
   const { items, total } = queryMedia(sp);
 
+  const sheetYears = (db.prepare('SELECT DISTINCT sheet_year FROM media ORDER BY sheet_year DESC').all() as { sheet_year: number }[]).map(r => r.sheet_year);
+  const releaseYears = (db.prepare('SELECT DISTINCT release_year FROM media ORDER BY release_year DESC').all() as { release_year: number }[]).map(r => r.release_year);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       <div className="mb-6 flex items-center justify-between">
@@ -59,7 +64,7 @@ export default async function LibraryPage({
       </div>
 
       <Suspense>
-        <LibraryFilters view={view as 'grid' | 'table'} />
+        <LibraryFilters view={view as 'grid' | 'table'} sheetYears={sheetYears} releaseYears={releaseYears} />
       </Suspense>
 
       <div className="mt-6">
