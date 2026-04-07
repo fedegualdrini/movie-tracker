@@ -1,8 +1,7 @@
 const BASE = 'http://www.omdbapi.com/';
 
 function apiKey(): string | null {
-  // Bracket notation prevents Turbopack/webpack from inlining at build time.
-  return process.env['OMDB_API_KEY'] ?? null;
+  return process.env['OMDB_API_KEY']?.trim() || null;
 }
 
 interface OmdbRating {

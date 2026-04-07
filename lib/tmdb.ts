@@ -1,10 +1,9 @@
 const BASE = 'https://api.themoviedb.org/3';
 
 function apiKey(): string | null {
-  // Bracket notation prevents Turbopack/webpack from inlining this at build time.
-  // Dot notation (process.env.TMDB_API_KEY) gets baked in as undefined if the
-  // var isn't present during the build, breaking runtime reads in lib files.
-  return process.env['TMDB_API_KEY'] ?? null;
+  // Bracket notation prevents Turbopack/webpack from inlining at build time.
+  // .trim() guards against accidental whitespace/tabs from copy-paste in Railway env vars.
+  return process.env['TMDB_API_KEY']?.trim() || null;
 }
 
 async function get<T>(endpoint: string, params: Record<string, string> = {}): Promise<T | null> {
