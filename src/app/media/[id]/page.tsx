@@ -11,6 +11,14 @@ import { EnrichButton } from '@/components/detail/EnrichButton';
 import { EditEntryForm } from '@/components/detail/EditEntryForm';
 import { Badge } from '@/components/ui/badge';
 
+interface TmdbSeason {
+  season_number: number;
+  name: string;
+  episode_count: number;
+  vote_average: number;
+  air_date?: string | null;
+}
+
 interface MediaRow {
   id: number;
   title: string;
@@ -25,6 +33,7 @@ interface MediaRow {
   tmdb_overview: string | null;
   tmdb_poster_path: string | null;
   tmdb_genres: string | null;
+  tmdb_seasons: string | null;
   imdb_id: string | null;
   rt_score: string | null;
   enriched_at: string | null;
@@ -41,7 +50,8 @@ export default async function MediaDetailPage({
 
   const posterUrl = getTmdbPosterUrl(item.tmdb_poster_path, 'w500');
   const genres: string[] = item.tmdb_genres ? JSON.parse(item.tmdb_genres) : [];
-  const hasTmdbKey = Boolean(process.env.TMDB_API_KEY);
+  const seasons: TmdbSeason[] = item.tmdb_seasons ? JSON.parse(item.tmdb_seasons) : [];
+  const hasTmdbKey = Boolean(process.env['TMDB_API_KEY']);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
@@ -121,6 +131,41 @@ export default async function MediaDetailPage({
         <p className="mt-2 text-center text-xs text-slate-400">
           TMDB score based on {item.tmdb_vote_count.toLocaleString()} votes
         </p>
+      )}
+
+      {/* Season scores — series/anime only */}
+      {seasons.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Season Scores</h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {seasons.map((s) => {
+              const score = s.vote_average;
+              const color =
+                score >= 8 ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-700'
+                : score >= 7 ? 'border-green-300 bg-green-50 dark:bg-green-950/30 dark:border-green-700'
+                : score >= 5 ? 'border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700'
+                : 'border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-700';
+              const textColor =
+                score >= 8 ? 'text-emerald-700 dark:text-emerald-400'
+                : score >= 7 ? 'text-green-700 dark:text-green-400'
+                : score >= 5 ? 'text-amber-700 dark:text-amber-400'
+                : 'text-red-700 dark:text-red-400';
+              return (
+                <div key={s.season_number} className={`rounded-lg border p-3 ${color}`}>
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate">
+                    {s.name}
+                  </p>
+                  <p className={`mt-1 text-xl font-bold tabular-nums ${textColor}`}>
+                    {score.toFixed(1)}
+                  </p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                    {s.episode_count} eps{s.air_date ? ` · ${s.air_date.slice(0, 4)}` : ''}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

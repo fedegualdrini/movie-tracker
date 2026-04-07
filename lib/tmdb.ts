@@ -109,6 +109,14 @@ export async function findBestTmdbMatch(
   return all[0];
 }
 
+export interface TmdbSeason {
+  season_number: number;
+  name: string;
+  episode_count: number;
+  vote_average: number;
+  air_date?: string | null;
+}
+
 export interface TmdbDetails {
   id: number;
   title?: string;
@@ -120,6 +128,7 @@ export interface TmdbDetails {
   genres?: Array<{ id: number; name: string }>;
   release_date?: string;
   first_air_date?: string;
+  seasons?: TmdbSeason[];
 }
 
 export async function getTmdbDetails(

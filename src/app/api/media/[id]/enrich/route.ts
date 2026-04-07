@@ -43,12 +43,13 @@ export async function POST(_req: NextRequest, { params }: Params) {
   }
 
   const genres = details?.genres?.map((g) => g.name) ?? [];
+  const seasons = details?.seasons?.filter(s => s.season_number > 0 && s.vote_average > 0) ?? [];
 
   db.prepare(`
     UPDATE media SET
       tmdb_id = ?, tmdb_score = ?, tmdb_vote_count = ?,
       tmdb_overview = ?, tmdb_poster_path = ?, tmdb_genres = ?,
-      imdb_id = ?, rt_score = ?,
+      tmdb_seasons = ?, imdb_id = ?, rt_score = ?,
       enriched_at = datetime('now'), updated_at = datetime('now')
     WHERE id = ?
   `).run(
@@ -58,6 +59,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     details?.overview ?? null,
     best.poster_path ?? null,
     genres.length > 0 ? JSON.stringify(genres) : null,
+    seasons.length > 0 ? JSON.stringify(seasons) : null,
     imdbId,
     rtScore,
     parseInt(id)

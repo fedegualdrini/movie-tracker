@@ -49,11 +49,14 @@ function createDb(): Database.Database {
   const dir = path.dirname(DB_PATH);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const db = new Database(DB_PATH);
-  // busy_timeout: wait up to 10s on lock contention instead of throwing immediately.
-  // Covers any remaining parallel access during hot-reload or concurrent requests.
   db.pragma('busy_timeout = 10000');
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  // Migrations for columns added after initial schema
+  const cols = (db.pragma('table_info(media)') as { name: string }[]).map(c => c.name);
+  if (!cols.includes('tmdb_seasons')) {
+    db.exec('ALTER TABLE media ADD COLUMN tmdb_seasons TEXT');
+  }
   return db;
 }
 
