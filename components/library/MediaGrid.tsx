@@ -11,6 +11,7 @@ interface MediaRow {
   tmdb_poster_path: string | null;
   tmdb_score: number | null;
   scored_seasons?: string | null;
+  avg_score?: number | null;
 }
 
 export function MediaGrid({ items }: { items: MediaRow[] }) {

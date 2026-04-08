@@ -46,7 +46,7 @@ function queryMedia(sp: SearchParams) {
   };
   const orderBy = sortMap[sp.sort ?? 'title'] ?? 'title ASC';
 
-  // Also fetch all scored season numbers per show as a comma-separated string
+  // Also fetch all scored season numbers and average score per show
   const items = db.prepare(`
     SELECT media.*, (
       SELECT GROUP_CONCAT(sub.season_number)
@@ -56,7 +56,12 @@ function queryMedia(sp: SearchParams) {
           AND m2.personal_score IS NOT NULL
         ORDER BY m2.season_number
       ) sub
-    ) as scored_seasons
+    ) as scored_seasons,
+    (
+      SELECT AVG(m2.personal_score) FROM media m2
+      WHERE m2.title = media.title AND m2.media_type = media.media_type
+        AND m2.personal_score IS NOT NULL
+    ) as avg_score
     FROM media ${where} ORDER BY ${orderBy}
   `).all(...params);
   const total = (db.prepare(`SELECT COUNT(*) as cnt FROM media ${where}`).get(...params) as { cnt: number }).cnt;

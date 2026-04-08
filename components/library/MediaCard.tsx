@@ -13,6 +13,7 @@ interface MediaRow {
   tmdb_poster_path: string | null;
   tmdb_score: number | null;
   scored_seasons?: string | null;
+  avg_score?: number | null;
 }
 
 function Initials({ title }: { title: string }) {
@@ -50,18 +51,24 @@ export function MediaCard({ item }: { item: MediaRow }) {
           )}
         </div>
 
-        {/* Personal score badge */}
-        <div className="absolute top-2 right-2">
-          {item.personal_score != null ? (
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold text-white shadow ${scoreOverlayBg(item.personal_score)}`}>
-              {item.personal_score.toFixed(1)}
-            </span>
-          ) : item.watched === 0 ? (
-            <span className="inline-flex items-center rounded-full bg-slate-900/80 px-2 py-0.5 text-xs text-white shadow backdrop-blur-sm">
-              No Visto
-            </span>
-          ) : null}
-        </div>
+        {/* Personal score badge — avg across seasons if multiple scored */}
+        {(() => {
+          const seasonCount = item.scored_seasons ? item.scored_seasons.split(',').filter(Boolean).length : 0;
+          const displayScore = seasonCount > 1 ? item.avg_score : item.personal_score;
+          return (
+            <div className="absolute top-2 right-2">
+              {displayScore != null ? (
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold text-white shadow ${scoreOverlayBg(displayScore)}`}>
+                  {displayScore.toFixed(1)}
+                </span>
+              ) : item.watched === 0 ? (
+                <span className="inline-flex items-center rounded-full bg-slate-900/80 px-2 py-0.5 text-xs text-white shadow backdrop-blur-sm">
+                  No Visto
+                </span>
+              ) : null}
+            </div>
+          );
+        })()}
 
         {/* Type badge + season tags */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
