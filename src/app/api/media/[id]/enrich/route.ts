@@ -16,19 +16,28 @@ interface MediaRow {
 
 export async function POST(_req: NextRequest, { params }: Params) {
   const { id } = await params;
+  const body = await _req.json().catch(() => ({})) as { tmdb_id?: number };
+
   const item = db.prepare('SELECT * FROM media WHERE id = ?').get(parseInt(id)) as MediaRow | undefined;
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const tmdbType = item.media_type === 'movie' ? 'movie' : 'tv';
 
-  const best = await findBestTmdbMatch(item.title, tmdbType, item.release_year);
-  if (!best) {
-    return NextResponse.json({ error: 'No TMDB match found' }, { status: 404 });
+  // Use a pre-selected TMDB ID if provided, otherwise find the best match
+  let tmdbId: number;
+  let posterPath: string | null = null;
+  if (body.tmdb_id) {
+    tmdbId = body.tmdb_id;
+  } else {
+    const best = await findBestTmdbMatch(item.title, tmdbType, item.release_year);
+    if (!best) return NextResponse.json({ error: 'No TMDB match found' }, { status: 404 });
+    tmdbId = best.id;
+    posterPath = best.poster_path ?? null;
   }
 
   // TMDB details
-  const details = await getTmdbDetails(best.id, tmdbType);
-  const externalIds = await getTmdbExternalIds(best.id, tmdbType);
+  const details = await getTmdbDetails(tmdbId, tmdbType);
+  const externalIds = await getTmdbExternalIds(tmdbId, tmdbType);
   const imdbId = externalIds?.imdb_id ?? null;
 
   // OMDB for RT score
@@ -44,6 +53,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   const genres = details?.genres?.map((g) => g.name) ?? [];
   const seasons = details?.seasons?.filter(s => s.season_number > 0 && s.vote_average > 0) ?? [];
+  const finalPoster = details?.poster_path ?? posterPath;
 
   db.prepare(`
     UPDATE media SET
@@ -53,11 +63,11 @@ export async function POST(_req: NextRequest, { params }: Params) {
       enriched_at = datetime('now'), updated_at = datetime('now')
     WHERE id = ?
   `).run(
-    best.id,
+    tmdbId,
     details?.vote_average ?? null,
     details?.vote_count ?? null,
     details?.overview ?? null,
-    best.poster_path ?? null,
+    finalPoster ?? null,
     genres.length > 0 ? JSON.stringify(genres) : null,
     seasons.length > 0 ? JSON.stringify(seasons) : null,
     imdbId,
