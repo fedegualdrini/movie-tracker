@@ -1,6 +1,7 @@
 {
   "name": "movie-tracker",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Personal media library — track movies, series and anime with TMDB metadata, season scoring, and Excel import",
   "private": true,
   "scripts": {
     "dev": "next dev",
