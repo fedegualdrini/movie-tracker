@@ -11,6 +11,7 @@ import { EnrichButton } from '@/components/detail/EnrichButton';
 import { EditEntryForm } from '@/components/detail/EditEntryForm';
 import { Badge } from '@/components/ui/badge';
 import { SeasonSelector } from '@/components/detail/SeasonSelector';
+import { WatchSection } from '@/components/detail/WatchSection';
 
 interface TmdbSeason {
   season_number: number;
@@ -167,6 +168,16 @@ export default async function MediaDetailPage({
         <p className="mt-2 text-center text-xs text-slate-400">
           TMDB Season {seasonNumber} score · {matchedTmdbSeason.episode_count} episodes
         </p>
+      )}
+
+      {/* Watch player — only when TMDB ID is available */}
+      {item.tmdb_id && (
+        <WatchSection
+          tmdbId={item.tmdb_id}
+          type={isSeries ? 'tv' : 'movie'}
+          tmdbSeasons={tmdbSeasons}
+          defaultSeason={seasonNumber}
+        />
       )}
 
       {/* All seasons from TMDB with user scores overlaid */}
